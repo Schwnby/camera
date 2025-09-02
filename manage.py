@@ -21,7 +21,29 @@ if not settings.configured:
             'django.middleware.clickjacking.XFrameOptionsMiddleware',
         ),
     )
+
+from django.urls import path
+
+urlpatterns = [
+    path('', index),
+]
+
+
+from django.core.wsgi import get_wsgi_application
+
+def configure():
+    print("Hello World!")
     
+configure()
+application = get_wsgi_application()
+app = get_wsgi_application()
+
+if __name__ == "__main__":
+    from django.core.management import execute_from_command_line
+    
+    execute_from_command_line(sys.argv)
+
+
 from django.http import HttpResponse
 from picamera2 import Picamera2
 from PIL import Image
@@ -42,18 +64,3 @@ def index(request):
     buffer.seek(0)
 
     return HttpResponse(buffer, content_type='image/png')
-
-from django.urls import path
-
-urlpatterns = [
-    path('', index),
-]
-
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
-app = get_wsgi_application()
-
-if __name__ == "__main__":
-    from django.core.management import execute_from_command_line
-    
-    execute_from_command_line(sys.argv)
