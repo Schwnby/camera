@@ -20,7 +20,7 @@ if not settings.configured:
             'django.middleware.csrf.CsrfViewMiddleware',
             'django.middleware.clickjacking.XFrameOptionsMiddleware',
         ),
-    )
+    )  
 
 format = 'BMP'
 content_type = 'image/bmp'
@@ -32,8 +32,8 @@ import io
 import cv2
 import time
 import json
-    
-def index(request):
+
+def take_picture():
     picam2 = Picamera2()
     config = picam2.create_still_configuration()
     picam2.configure(config)
@@ -45,14 +45,16 @@ def index(request):
 
     picam2.stop()
     picam2.close()
+    
+    return frame
+    
+def index(request):
+    frame = take_picture()
 
     image = Image.fromarray(frame)
     buffer = io.BytesIO()
     image.save(buffer, format=format)
     buffer.seek(0)
-    
-    print(format)
-    print(content_type)
     
     return HttpResponse(buffer.getvalue(), content_type=content_type)
 
@@ -67,17 +69,7 @@ urlpatterns = [
 from django.core.wsgi import get_wsgi_application
     
 def configure():
-    picam2 = Picamera2()
-    config = picam2.create_still_configuration()
-    picam2.configure(config)
-    
-    picam2.start()
-    time.sleep(2)
-    
-    image = picam2.capture_array()
-    
-    picam2.stop()
-    picam2.close()
+    image = take_picture()
     
     image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     
