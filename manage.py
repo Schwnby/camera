@@ -22,26 +22,39 @@ if not settings.configured:
         ),
     )
 
+format = 'BMP'
+content_type = 'image/bmp'
+
 from django.http import HttpResponse
 from picamera2 import Picamera2
 from PIL import Image
 import io
-
+import cv2
+import time
+import json
+    
 def index(request):
     picam2 = Picamera2()
+    config = picam2.create_still_configuration()
+    picam2.configure(config)
 
     picam2.start()
+    time.sleep(2)
 
     frame = picam2.capture_array()
 
+    picam2.stop()
     picam2.close()
 
     image = Image.fromarray(frame)
     buffer = io.BytesIO()
-    image.save(buffer, format='PNG')
+    image.save(buffer, format=format)
     buffer.seek(0)
-
-    return HttpResponse(buffer, content_type='image/png')
+    
+    print(format)
+    print(content_type)
+    
+    return HttpResponse(buffer.getvalue(), content_type=content_type)
 
 
 from django.urls import path
@@ -52,12 +65,37 @@ urlpatterns = [
 
 
 from django.core.wsgi import get_wsgi_application
-
+    
 def configure():
-    print("Hello World!")
+    picam2 = Picamera2()
+    config = picam2.create_still_configuration()
+    picam2.configure(config)
+    
+    picam2.start()
+    time.sleep(2)
+    
+    image = picam2.capture_array()
+    
+    picam2.stop()
+    picam2.close()
+    
+    image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    
+    detector = cv2.QRCodeDetector()
+    data, bbox, straight_qrcode = detector.detectAndDecode(image_bgr)
+    
+    if bbox is not None:        
+        parsed = json.loads(data)
+        format = parsed["format"]
+        content_type = parsed["content_type"]
+    else:
+        print("No QR code found")
+    
+    time.sleep(5)
     
 configure()
 application = get_wsgi_application()
+
 
 if __name__ == "__main__":
     from django.core.management import execute_from_command_line
